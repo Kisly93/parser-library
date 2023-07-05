@@ -77,9 +77,9 @@ def parse_book_page(content):
 
 def main():
     base_url = "https://tululu.org/b"
-    parser = argparse.ArgumentParser(description='Download books from Tululu.org')
-    parser.add_argument('start_id', type=int, help='Starting book ID')
-    parser.add_argument('end_id', type=int, help='Ending book ID')
+    parser = argparse.ArgumentParser(description='Скачать книги с сайта Tululu.org')
+    parser.add_argument('start_id', type=int, help='ID начальной книги')
+    parser.add_argument('end_id', type=int, help='ID конечной книги')
     args = parser.parse_args()
     for book_id in range(args.start_id, args.end_id + 1):
         try:
