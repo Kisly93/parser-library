@@ -15,7 +15,7 @@ def download_txt(book_url, filename, folder='books/'):
     os.makedirs(os.path.dirname(filepath), exist_ok=True)
     with open(filepath, 'w', encoding='utf-8') as file:
         file.write(response.text)
-
+    print(filepath)
     return filepath
 
 
@@ -44,27 +44,27 @@ def check_for_redirect(response, book_url):
 
 def parse_book_page(content):
     soup = BeautifulSoup(content, 'lxml')
-    title_tag = soup.find('h1')
-    title_text = title_tag.text.strip()
-    split_title = title_text.split(" :: ")
-    title = split_title[0].strip()
-    author = split_title[1].strip()
+    title_element = soup.find('h1')
+    title_text = title_element.text.strip()
+    title_parts = title_text.split(" :: ")
+    title = title_parts[0].strip()
+    author = title_parts[1].strip()
 
-    img_container = soup.find('div', class_='bookimage')
-    if img_container is None:
+    book_image_container = soup.find('div', class_='bookimage')
+    if book_image_container is None:
         img_url = None
     else:
-        relative_url = img_container.find('img')['src']
+        img_relative_url = book_image_container.find('img')['src']
         url = "https://tululu.org/"
-        img_url = urljoin(url, relative_url)
+        img_url = urljoin(url, img_relative_url)
 
-    genres = soup.find('span', class_='d_book').find_all('a')
-    genre_text = [genre.text.strip() for genre in genres]
+    genre_elements = soup.find('span', class_='d_book').find_all('a')
+    genre_text = [genre.text.strip() for genre in genre_elements]
 
-    comments = soup.find_all('div', class_='texts')
-    comment_texts = [comment.span.text.strip() for comment in comments]
+    comment_elements = soup.find_all('div', class_='texts')
+    comment_texts = [comment.span.text.strip() for comment in comment_elements]
 
-    book_data = {
+    book_information = {
         'title': title,
         'author': author,
         'img_url': img_url,
@@ -72,37 +72,39 @@ def parse_book_page(content):
         'comments': comment_texts
     }
 
-    return book_data
+    return book_information
 
 
 def main():
-    base_url = "https://tululu.org/b"
+    url_properties = "https://tululu.org/b"
+    base_url = "https://tululu.org/txt.php?id="
     parser = argparse.ArgumentParser(description='Скачать книги с сайта Tululu.org')
     parser.add_argument('start_id', type=int, help='ID начальной книги')
     parser.add_argument('end_id', type=int, help='ID конечной книги')
     args = parser.parse_args()
     for book_id in range(args.start_id, args.end_id + 1):
         try:
+            book_url_properties = f"{url_properties}{book_id}/"
             book_url = f"{base_url}{book_id}/"
-            response = requests.get(book_url)
+            response = requests.get(book_url_properties)
             response.raise_for_status()
-            check_for_redirect(response, book_url)
-            book_data = parse_book_page(response.content)
-            print(book_data)
-            book_title = book_data['title']
-            book_img = book_data['img_url']
+            check_for_redirect(response, book_url_properties)
+            book_information = parse_book_page(response.content)
+            print(book_information)
+            book_title = book_information['title']
+            book_img = book_information['img_url']
             filename = f"{book_id}.{book_title}"
             download_txt(book_url, filename)
             download_image(book_img)
             print(f"Книга '{book_title}' и обложка скачаны успешно.")
-            print("Автор:", book_data['author'])
-            print("Жанры:", book_data['genres'])
-            print("Коментарии", book_data['comments'])
+            print("Автор:", book_information['author'])
+            print("Жанры:", book_information['genres'])
+            print("Коментарии", book_information['comments'])
             print()
 
         except requests.exceptions.HTTPError as error:
-            url = f"{base_url}{book_id}/"
-            print(f"На странице {url} книга не найдена.")
+            book_url = f"{base_url}{book_id}/"
+            print(f"На странице {book_url} книга не найдена.")
 
 
 if __name__ == '__main__':
