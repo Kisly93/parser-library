@@ -60,6 +60,21 @@ def check_for_redirect(response, url):
         raise requests.exceptions.HTTPError("An HTTP error occurred")
 
 
+def get_comments(book_id):
+    book_url = f"{base_url}{book_id}/"
+    response = requests.get(book_url)
+    response.raise_for_status()
+    soup = BeautifulSoup(response.text, 'lxml')
+    comments = soup.find_all('div', class_='texts')
+
+    comment_texts = []
+    for comment in comments:
+        comment_text = comment.span.text.strip()
+        comment_texts.append(comment_text)
+
+    return comment_texts
+
+
 def main():
     for book_id in range(1, 11):
         try:
@@ -68,6 +83,13 @@ def main():
             download_txt(f"{base_url}{book_id}/", filename)
             download_image(book_img, filename)
             print(f"Книга '{book_title}' и обложка скачаны успешно.")
+
+            comments = get_comments(book_id)
+            if comments:
+                print("Комментарии:")
+                for comment in comments:
+                    print(comment)
+                print()
         except requests.exceptions.HTTPError as error:
             url = f"{base_url}{book_id}/"
             print(f"На странице {url} книга не найдена.")
