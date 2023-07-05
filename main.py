@@ -74,7 +74,19 @@ def get_comments(book_id):
 
     return comment_texts
 
+def get_genre_book(book_id):
+    book_url = f"{base_url}{book_id}/"
+    response = requests.get(book_url)
+    response.raise_for_status()
+    soup = BeautifulSoup(response.text, 'lxml')
+    genres = soup.find('span', class_='d_book').find_all('a')
 
+    genre_text = []
+    for genre in genres:
+        genre_texts = genre.text.strip()
+        genre_text.append(genre_texts)
+
+    return genre_text
 def main():
     for book_id in range(1, 11):
         try:
@@ -84,12 +96,14 @@ def main():
             download_image(book_img, filename)
             print(f"Книга '{book_title}' и обложка скачаны успешно.")
 
-            comments = get_comments(book_id)
-            if comments:
-                print("Комментарии:")
-                for comment in comments:
-                    print(comment)
-                print()
+            # comments = get_comments(book_id)
+            # if comments:
+            #     print("Комментарии:")
+            #     for comment in comments:
+            #         print(comment)
+            #     print()
+            print(get_genre_book(book_id))
+
         except requests.exceptions.HTTPError as error:
             url = f"{base_url}{book_id}/"
             print(f"На странице {url} книга не найдена.")
