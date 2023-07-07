@@ -50,9 +50,8 @@ def parse_book_page(content):
     author = title_parts[1].strip()
 
     book_image_container = soup.find('div', class_='bookimage')
-    if not book_image_container:
-        img_url = None
-    else:
+    img_url = None
+    if book_image_container:
         img_relative_url = book_image_container.find('img')['src']
         url = "https://tululu.org/"
         img_url = urljoin(url, img_relative_url)
