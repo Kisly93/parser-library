@@ -2,10 +2,9 @@ import requests
 import os
 from pathvalidate import sanitize_filename
 from bs4 import BeautifulSoup
-from urllib.parse import urljoin, unquote, urlsplit
+from urllib.parse import urljoin, unquote, urlsplit, urlencode
 import argparse
 import time
-
 
 def download_txt(book_url, filename, folder='books/'):
     try:
@@ -84,16 +83,16 @@ def parse_book_page(content):
 
 def main():
     properties_url = "https://tululu.org/b"
-    base_url = "https://tululu.org/txt.php?id="
+    base_url = "https://tululu.org/txt.php"
     parser = argparse.ArgumentParser(description='Скачать книги с сайта Tululu.org')
     parser.add_argument('start_id', type=int, nargs='?', default=1, help='ID начальной книги (по умолчанию: 1)')
-    parser.add_argument('end_id'
-                        '', type=int, nargs='?', default=10, help='ID конечной книги (по умолчанию: 10)')
+    parser.add_argument('end_id', type=int, nargs='?', default=10, help='ID конечной книги (по умолчанию: 10)')
     args = parser.parse_args()
     for book_id in range(args.start_id, args.end_id + 1):
         try:
             book_properties_url = f"{properties_url}{book_id}/"
-            book_url = f"{base_url}{book_id}/"
+            params = {'id': book_id}
+            book_url = f"{base_url}?{urlencode(params)}"
             response = requests.get(book_properties_url)
             response.raise_for_status()
             check_for_redirect(response, book_properties_url)
@@ -106,16 +105,18 @@ def main():
             print(f"Книга '{book_title}' и обложка скачаны успешно.")
             print("Автор:", book_information['author'])
             print("Жанры:", book_information['genres'])
-            print("Коментарии", book_information['comments'])
+            print("Комментарии", book_information['comments'])
             print()
 
         except requests.exceptions.HTTPError as error:
-            book_url = f"{base_url}{book_id}/"
+            book_url = f"{base_url}?{urlencode(params)}"
             print(f"На странице {book_url} книга не найдена.")
 
         except requests.exceptions.ConnectionError as error:
             print(f"Ошибка при установлении соединения: {error}")
             print("Пауза перед следующей попыткой...")
             time.sleep(5)
+
+
 if __name__ == '__main__':
     main()
