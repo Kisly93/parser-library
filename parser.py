@@ -15,7 +15,6 @@ def download_txt(book_url, filename, folder='books/'):
     os.makedirs(os.path.dirname(filepath), exist_ok=True)
     with open(filepath, 'w', encoding='utf-8') as file:
         file.write(response.text)
-    print(filepath)
     return filepath
 
 
@@ -90,7 +89,6 @@ def main():
             response.raise_for_status()
             check_for_redirect(response, book_url_properties)
             book_information = parse_book_page(response.content)
-            print(book_information)
             book_title = book_information['title']
             book_img = book_information['img_url']
             filename = f"{book_id}.{book_title}"
