@@ -83,19 +83,20 @@ def parse_book_page(content):
 
 
 def main():
-    url_properties = "https://tululu.org/b"
+    properties_url = "https://tululu.org/b"
     base_url = "https://tululu.org/txt.php?id="
     parser = argparse.ArgumentParser(description='Скачать книги с сайта Tululu.org')
     parser.add_argument('start_id', type=int, nargs='?', default=1, help='ID начальной книги (по умолчанию: 1)')
-    parser.add_argument('end_id', type=int, nargs='?', default=10, help='ID конечной книги (по умолчанию: 10)')
+    parser.add_argument('end_id'
+                        '', type=int, nargs='?', default=10, help='ID конечной книги (по умолчанию: 10)')
     args = parser.parse_args()
     for book_id in range(args.start_id, args.end_id + 1):
         try:
-            book_url_properties = f"{url_properties}{book_id}/"
+            book_properties_url = f"{properties_url}{book_id}/"
             book_url = f"{base_url}{book_id}/"
-            response = requests.get(book_url_properties)
+            response = requests.get(book_properties_url)
             response.raise_for_status()
-            check_for_redirect(response, book_url_properties)
+            check_for_redirect(response, book_properties_url)
             book_information = parse_book_page(response.content)
             book_title = book_information['title']
             book_img = book_information['img_url']
