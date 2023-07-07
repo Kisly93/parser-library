@@ -50,7 +50,7 @@ def parse_book_page(content):
     author = title_parts[1].strip()
 
     book_image_container = soup.find('div', class_='bookimage')
-    if book_image_container is None:
+    if not book_image_container:
         img_url = None
     else:
         img_relative_url = book_image_container.find('img')['src']
