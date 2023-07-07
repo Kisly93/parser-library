@@ -4,36 +4,45 @@ from pathvalidate import sanitize_filename
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin, unquote, urlsplit
 import argparse
+import time
 
 
 def download_txt(book_url, filename, folder='books/'):
-    response = requests.get(book_url)
-    response.raise_for_status()
-    check_for_redirect(response, book_url)
-    sanitized_filename = sanitize_filename(filename, platform='auto')
-    filepath = os.path.join(folder, sanitized_filename + '.txt')
-    os.makedirs(os.path.dirname(filepath), exist_ok=True)
-    with open(filepath, 'w', encoding='utf-8') as file:
-        file.write(response.text)
-    return filepath
+    try:
+        response = requests.get(book_url)
+        response.raise_for_status()
+        check_for_redirect(response, book_url)
+        sanitized_filename = sanitize_filename(filename, platform='auto')
+        filepath = os.path.join(folder, sanitized_filename + '.txt')
+        os.makedirs(os.path.dirname(filepath), exist_ok=True)
+        with open(filepath, 'w', encoding='utf-8') as file:
+            file.write(response.text)
+        return filepath
+    except requests.exceptions.ConnectionError as error:
+        print(f"Ошибка при скачивании книги '{filename}': {error}")
+        return None
 
 
 def download_image(book_url, folder='images/'):
-    response = requests.get(book_url)
-    response.raise_for_status()
-    check_for_redirect(response, book_url)
-    parsed_url = urlsplit(book_url)
-    unquoted_filename = unquote(parsed_url.path.split('/')[-1])
-    sanitized_filename = sanitize_filename(unquoted_filename, platform='auto')
+    try:
+        response = requests.get(book_url)
+        response.raise_for_status()
+        check_for_redirect(response, book_url)
+        parsed_url = urlsplit(book_url)
+        unquoted_filename = unquote(parsed_url.path.split('/')[-1])
+        sanitized_filename = sanitize_filename(unquoted_filename, platform='auto')
 
-    filepath = os.path.join(folder, sanitized_filename)
+        filepath = os.path.join(folder, sanitized_filename)
 
-    os.makedirs(os.path.dirname(filepath), exist_ok=True)
+        os.makedirs(os.path.dirname(filepath), exist_ok=True)
 
-    with open(filepath, 'wb') as file:
-        file.write(response.content)
+        with open(filepath, 'wb') as file:
+            file.write(response.content)
 
-    return filepath
+        return filepath
+    except requests.exceptions.ConnectionError as error:
+        print(f"Ошибка при скачивании обложки: {error}")
+        return None
 
 
 def check_for_redirect(response, book_url):
@@ -103,6 +112,9 @@ def main():
             book_url = f"{base_url}{book_id}/"
             print(f"На странице {book_url} книга не найдена.")
 
-
+        except requests.exceptions.ConnectionError as error:
+            print(f"Ошибка при установлении соединения: {error}")
+            print("Пауза перед следующей попыткой...")
+            time.sleep(5)
 if __name__ == '__main__':
     main()
