@@ -6,42 +6,33 @@ from urllib.parse import urljoin, unquote, urlsplit, urlencode
 import argparse
 import time
 
+
 def download_txt(book_url, filename, folder='books/'):
-    try:
-        response = requests.get(book_url)
-        response.raise_for_status()
-        check_for_redirect(response, book_url)
-        sanitized_filename = sanitize_filename(filename, platform='auto')
-        filepath = os.path.join(folder, f'{sanitized_filename}.txt')
-        os.makedirs(os.path.dirname(filepath), exist_ok=True)
-        with open(filepath, 'w', encoding='utf-8') as file:
-            file.write(response.text)
-        return filepath
-    except requests.exceptions.ConnectionError as error:
-        print(f"Ошибка при скачивании книги '{filename}': {error}")
-        return None
+    response = requests.get(book_url)
+    response.raise_for_status()
+    sanitized_filename = sanitize_filename(filename, platform='auto')
+    filepath = os.path.join(folder, f'{sanitized_filename}.txt')
+    os.makedirs(os.path.dirname(filepath), exist_ok=True)
+    with open(filepath, 'w', encoding='utf-8') as file:
+        file.write(response.text)
+    return filepath
 
 
 def download_image(book_url, folder='images/'):
-    try:
-        response = requests.get(book_url)
-        response.raise_for_status()
-        check_for_redirect(response, book_url)
-        parsed_url = urlsplit(book_url)
-        unquoted_filename = unquote(parsed_url.path.split('/')[-1])
-        sanitized_filename = sanitize_filename(unquoted_filename, platform='auto')
+    response = requests.get(book_url)
+    response.raise_for_status()
+    parsed_url = urlsplit(book_url)
+    unquoted_filename = unquote(parsed_url.path.split('/')[-1])
+    sanitized_filename = sanitize_filename(unquoted_filename, platform='auto')
 
-        filepath = os.path.join(folder, sanitized_filename)
+    filepath = os.path.join(folder, sanitized_filename)
 
-        os.makedirs(os.path.dirname(filepath), exist_ok=True)
+    os.makedirs(os.path.dirname(filepath), exist_ok=True)
 
-        with open(filepath, 'wb') as file:
-            file.write(response.content)
+    with open(filepath, 'wb') as file:
+        file.write(response.content)
 
-        return filepath
-    except requests.exceptions.ConnectionError as error:
-        print(f"Ошибка при скачивании обложки: {error}")
-        return None
+    return filepath
 
 
 def check_for_redirect(response, book_url):
@@ -81,10 +72,34 @@ def parse_book_page(content):
     return book
 
 
-def main():
+def download_book(book_id):
     properties_url = "https://tululu.org/b"
     base_url = "https://tululu.org/txt.php"
+    book_properties_url = f"{properties_url}{book_id}/"
+    params = {'id': book_id}
+    book_url = f"{base_url}{urlencode(params)}"
+    print(book_url)
 
+    response = requests.get(book_properties_url)
+    response.raise_for_status()
+    check_for_redirect(response, book_properties_url)
+
+    book = parse_book_page(response.content)
+    book_title = book['title']
+    book_img = book['img_url']
+    filename = f"{book_id}.{book_title}"
+
+    download_txt(book_url, filename)
+    download_image(book_img)
+
+    print(f"Книга '{book_title}' и обложка скачаны успешно.")
+    print("Автор:", book['author'])
+    print("Жанры:", book['genres'])
+    print("Комментарии", book['comments'])
+    print()
+
+
+def main():
     parser = argparse.ArgumentParser(description='Скачать книги с сайта Tululu.org')
     parser.add_argument('start_id', type=int, nargs='?', default=1, help='ID начальной книги (по умолчанию: 1)')
     parser.add_argument('end_id', type=int, nargs='?', default=10, help='ID конечной книги (по умолчанию: 10)')
@@ -92,32 +107,12 @@ def main():
 
     for book_id in range(args.start_id, args.end_id + 1):
         try:
-            book_properties_url = f"{properties_url}{book_id}/"
-            params = {'id': book_id}
-            book_url = f"{base_url}?{urlencode(params)}"
-
-            response = requests.get(book_properties_url)
-            response.raise_for_status()
-            check_for_redirect(response, book_properties_url)
-
-            book = parse_book_page(response.content)
-            book_title = book['title']
-            book_img = book['img_url']
-            filename = f"{book_id}.{book_title}"
-
-            download_txt(book_url, filename)
-            download_image(book_img)
-
-            print(f"Книга '{book_title}' и обложка скачаны успешно.")
-            print("Автор:", book['author'])
-            print("Жанры:", book['genres'])
-            print("Комментарии", book['comments'])
-            print()
-
+            download_book(book_id)
         except requests.exceptions.HTTPError as error:
-            book_url = f"{base_url}?{urlencode(params)}"
+            base_url = "https://tululu.org/txt.php"
+            params = {'id': book_id}
+            book_url = f"{base_url}{urlencode(params)}"
             print(f"На странице {book_url} книга не найдена.")
-
         except requests.exceptions.ConnectionError as error:
             print(f"Ошибка при установлении соединения: {error}")
             print("Пауза перед следующей попыткой...")
