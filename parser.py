@@ -12,7 +12,7 @@ def download_txt(book_url, filename, folder='books/'):
         response.raise_for_status()
         check_for_redirect(response, book_url)
         sanitized_filename = sanitize_filename(filename, platform='auto')
-        filepath = os.path.join(folder, sanitized_filename + '.txt')
+        filepath = os.path.join(folder, f'{sanitized_filename}.txt')
         os.makedirs(os.path.dirname(filepath), exist_ok=True)
         with open(filepath, 'w', encoding='utf-8') as file:
             file.write(response.text)
@@ -70,7 +70,7 @@ def parse_book_page(content):
     comment_elements = soup.find_all('div', class_='texts')
     comment_texts = [comment.span.text.strip() for comment in comment_elements]
 
-    book_information = {
+    book = {
         'title': title,
         'author': author,
         'img_url': img_url,
@@ -78,7 +78,7 @@ def parse_book_page(content):
         'comments': comment_texts
     }
 
-    return book_information
+    return book
 
 
 def main():
@@ -100,18 +100,18 @@ def main():
             response.raise_for_status()
             check_for_redirect(response, book_properties_url)
 
-            book_information = parse_book_page(response.content)
-            book_title = book_information['title']
-            book_img = book_information['img_url']
+            book = parse_book_page(response.content)
+            book_title = book['title']
+            book_img = book['img_url']
             filename = f"{book_id}.{book_title}"
 
             download_txt(book_url, filename)
             download_image(book_img)
 
             print(f"Книга '{book_title}' и обложка скачаны успешно.")
-            print("Автор:", book_information['author'])
-            print("Жанры:", book_information['genres'])
-            print("Комментарии", book_information['comments'])
+            print("Автор:", book['author'])
+            print("Жанры:", book['genres'])
+            print("Комментарии", book['comments'])
             print()
 
         except requests.exceptions.HTTPError as error:
