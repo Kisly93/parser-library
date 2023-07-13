@@ -7,8 +7,9 @@ import argparse
 import time
 
 
-def download_txt(book_url, filename, folder='books/'):
-    response = requests.get(book_url)
+def download_txt(book_url, filename, book_id, folder='books/'):
+    params = {'id': book_id}
+    response = requests.get(book_url, params=params)
     response.raise_for_status()
     sanitized_filename = sanitize_filename(filename, platform='auto')
     filepath = os.path.join(folder, f'{sanitized_filename}.txt')
@@ -18,29 +19,26 @@ def download_txt(book_url, filename, folder='books/'):
     return filepath
 
 
-def download_image(book_url, folder='images/'):
-    response = requests.get(book_url)
+def download_image(book_img, folder='images/'):
+    response = requests.get(book_img)
     response.raise_for_status()
-    parsed_url = urlsplit(book_url)
+    parsed_url = urlsplit(book_img)
     unquoted_filename = unquote(parsed_url.path.split('/')[-1])
     sanitized_filename = sanitize_filename(unquoted_filename, platform='auto')
-
     filepath = os.path.join(folder, sanitized_filename)
-
     os.makedirs(os.path.dirname(filepath), exist_ok=True)
-
     with open(filepath, 'wb') as file:
         file.write(response.content)
 
     return filepath
 
 
-def check_for_redirect(response, book_url):
-    if response.url != book_url:
+def check_for_redirect(response, book_properties_url):
+    if response.url != book_properties_url:
         raise requests.exceptions.HTTPError("An HTTP error occurred")
 
 
-def parse_book_page(content):
+def parse_book_page(content, book_properties_url):
     soup = BeautifulSoup(content, 'lxml')
     title_element = soup.find('h1')
     title_text = title_element.text.strip()
@@ -52,7 +50,7 @@ def parse_book_page(content):
     img_url = None
     if book_image_container:
         img_relative_url = book_image_container.find('img')['src']
-        url = "https://tululu.org/"
+        url = book_properties_url
         img_url = urljoin(url, img_relative_url)
 
     genre_elements = soup.find('span', class_='d_book').find_all('a')
@@ -76,20 +74,17 @@ def download_book(book_id):
     properties_url = "https://tululu.org/b"
     base_url = "https://tululu.org/txt.php"
     book_properties_url = f"{properties_url}{book_id}/"
-    params = {'id': book_id}
-    book_url = f"{base_url}{urlencode(params)}"
-    print(book_url)
 
     response = requests.get(book_properties_url)
     response.raise_for_status()
     check_for_redirect(response, book_properties_url)
 
-    book = parse_book_page(response.content)
+    book = parse_book_page(response.content, book_properties_url)
     book_title = book['title']
     book_img = book['img_url']
     filename = f"{book_id}.{book_title}"
 
-    download_txt(book_url, filename)
+    download_txt(base_url, filename, book_id)
     download_image(book_img)
 
     print(f"Книга '{book_title}' и обложка скачаны успешно.")
@@ -109,10 +104,10 @@ def main():
         try:
             download_book(book_id)
         except requests.exceptions.HTTPError as error:
-            base_url = "https://tululu.org/txt.php"
-            params = {'id': book_id}
-            book_url = f"{base_url}{urlencode(params)}"
-            print(f"На странице {book_url} книга не найдена.")
+            base_url = "https://tululu.org/b"
+            url = f"{base_url}{book_id}/"
+            print(f"На странице {url} книга не найдена.")
+            print()
         except requests.exceptions.ConnectionError as error:
             print(f"Ошибка при установлении соединения: {error}")
             print("Пауза перед следующей попыткой...")
