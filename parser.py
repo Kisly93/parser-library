@@ -2,7 +2,7 @@ import requests
 import os
 from pathvalidate import sanitize_filename
 from bs4 import BeautifulSoup
-from urllib.parse import urljoin, unquote, urlsplit, urlencode
+from urllib.parse import urljoin, unquote, urlsplit
 import argparse
 import time
 
