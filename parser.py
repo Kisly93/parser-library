@@ -5,6 +5,7 @@ from bs4 import BeautifulSoup
 from urllib.parse import urljoin, unquote, urlsplit
 import argparse
 import time
+import json
 
 
 def download_txt(book_url, filename, book_id, folder='books/'):
@@ -14,8 +15,8 @@ def download_txt(book_url, filename, book_id, folder='books/'):
     sanitized_filename = sanitize_filename(filename, platform='auto')
     filepath = os.path.join(folder, f'{sanitized_filename}.txt')
     os.makedirs(os.path.dirname(filepath), exist_ok=True)
-    with open(filepath, 'w', encoding='utf-8') as file:
-        file.write(response.text)
+    with open(filepath, 'wb') as file:
+        file.write(response.content)
     return filepath
 
 
@@ -40,58 +41,32 @@ def check_for_redirect(response, book_properties_url):
 
 def parse_book_page(content, book_properties_url):
     soup = BeautifulSoup(content, 'lxml')
-    title_element = soup.find('h1')
+    title_element = soup.select_one('h1')
     title_text = title_element.text.strip()
     title_parts = title_text.split(" :: ")
     title = title_parts[0].strip()
     author = title_parts[1].strip()
 
-    book_image_container = soup.find('div', class_='bookimage')
-    img_url = None
-    if book_image_container:
-        img_relative_url = book_image_container.find('img')['src']
-        url = book_properties_url
-        img_url = urljoin(url, img_relative_url)
+    book_properties = soup.select('table.d_book a')
 
-    genre_elements = soup.find('span', class_='d_book').find_all('a')
+    img = soup.select_one('table.d_book img')['src']
+
+    genre_elements = soup.select('span.d_book a')
     genre_text = [genre.text.strip() for genre in genre_elements]
 
-    comment_elements = soup.find_all('div', class_='texts')
+    comment_elements = soup.select('div.texts')
     comment_texts = [comment.span.text.strip() for comment in comment_elements]
 
     book = {
         'title': title,
         'author': author,
-        'img_url': img_url,
+        'img_url': urljoin(book_properties_url, img),
         'genres': genre_text,
-        'comments': comment_texts
+        'comments': comment_texts,
+        'book_url': urljoin(book_properties_url, book_properties[-3]['href']),
     }
 
     return book
-
-
-def download_book(book_id):
-    properties_url = "https://tululu.org/b"
-    base_url = "https://tululu.org/txt.php"
-    book_properties_url = f"{properties_url}{book_id}/"
-
-    response = requests.get(book_properties_url)
-    response.raise_for_status()
-    check_for_redirect(response, book_properties_url)
-
-    book = parse_book_page(response.content, book_properties_url)
-    book_title = book['title']
-    book_img = book['img_url']
-    filename = f"{book_id}.{book_title}"
-
-    download_txt(base_url, filename, book_id)
-    download_image(book_img)
-
-    print(f"Книга '{book_title}' и обложка скачаны успешно.")
-    print("Автор:", book['author'])
-    print("Жанры:", book['genres'])
-    print("Комментарии", book['comments'])
-    print()
 
 
 def main():
@@ -102,7 +77,27 @@ def main():
 
     for book_id in range(args.start_id, args.end_id + 1):
         try:
-            download_book(book_id)
+            book_properties_url = f"https://tululu.org/b{book_id}/"
+
+            response = requests.get(book_properties_url)
+            response.raise_for_status()
+            check_for_redirect(response, book_properties_url)
+
+            book = parse_book_page(response.content, book_properties_url)
+            book_title = book['title']
+            book_img = book['img_url']
+            book_url = book['book_url']
+            filename = f"{book_id}.{book_title}"
+
+            download_txt(book_url, filename, book_id)
+            download_image(book_img)
+
+            print(f"Книга '{book_title}' и обложка скачаны успешно.")
+            print("Автор:", book['author'])
+            print("Жанры:", book['genres'])
+            print("Комментарии", book['comments'])
+            print()
+
         except requests.exceptions.HTTPError as error:
             base_url = "https://tululu.org/b"
             url = f"{base_url}{book_id}/"
