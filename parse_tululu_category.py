@@ -31,9 +31,9 @@ def main():
     os.makedirs(args.dest_folder, exist_ok=True)
     book_descriptions = []
 
-    for page in range(args.start_page, args.end_page + 1):
+    for num_page in range(args.start_page, args.end_page + 1):
         try:
-            url = f"https://tululu.org/l55/{page}/"
+            url = f"https://tululu.org/l55/{num_page}/"
             response = requests.get(url)
             response.raise_for_status()
             check_for_redirect(response, url)
