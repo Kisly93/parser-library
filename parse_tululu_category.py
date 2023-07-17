@@ -13,8 +13,8 @@ def parse_book_tag(content, url):
     books_urls = []
     books_tag = soup.select('table.d_book')
     for book_tag in books_tag:
-        book_id = book_tag.select_one('a')['href']
-        book_url = urljoin(url, book_id)
+        book_reference = book_tag.select_one('a')['href']
+        book_url = urljoin(url, book_reference)
         books_urls.append(book_url)
     return books_urls
 
@@ -31,9 +31,9 @@ def main():
     os.makedirs(args.dest_folder, exist_ok=True)
     book_descriptions = []
 
-    for num_page in range(args.start_page, args.end_page + 1):
+    for page_num in range(args.start_page, args.end_page + 1):
         try:
-            url = f"https://tululu.org/l55/{num_page}/"
+            url = f"https://tululu.org/l55/{page_num}/"
             response = requests.get(url)
             response.raise_for_status()
             check_for_redirect(response, url)
