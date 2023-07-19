@@ -26,7 +26,7 @@
                       <div class="card-body">
                         <h5 class="card-title">{{ book['title'] }}</h5>
                         <p class="card-text">{{ book['author'] }}</p>
-                        <a href="../books/{{ book['book_name'] }}" target="_blank">Читать</a>
+                        <a href="../books/{{ book['book_name'] }}.txt" target="_blank">Читать</a>
                       </div>
                     </div>
                   </div>
@@ -35,6 +35,42 @@
             {% endfor %}
           </div>
         {% endfor %}
+
+     <nav aria-label="Page navigation example">
+  <ul class="pagination">
+    {% if current_page > 1 %}
+      <li class="page-item">
+        <a class="page-link" href="../pages/index{{ current_page - 1 }}.html" aria-label="Previous">
+          <span aria-hidden="true">&laquo;</span>
+          <span class="sr-only">Previous</span>
+        </a>
+      </li>
+    {% endif %}
+
+    {% for page_num in range(1, total_pages + 1) %}
+      {% if page_num == current_page %}
+        <li class="page-item active">
+          <a class="page-link" href="../pages/index{{ page_num }}.html">{{ page_num }}</a>
+        </li>
+      {% else %}
+        <li class="page-item">
+          <a class="page-link" href="../pages/index{{ page_num }}.html">{{ page_num }}</a>
+        </li>
+      {% endif %}
+    {% endfor %}
+
+    {% if current_page < total_pages %}
+      <li class="page-item">
+        <a class="page-link" href="../pages/index{{ current_page + 1 }}.html" aria-label="Next">
+          <span aria-hidden="true">&raquo;</span>
+          <span class="sr-only">Next</span>
+        </a>
+      </li>
+    {% endif %}
+  </ul>
+</nav>
+
+      </div>
       </div>
 
  </body>

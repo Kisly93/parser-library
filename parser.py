@@ -66,7 +66,7 @@ def parse_book_page(content, book_properties_url, book_id):
         'genres': genre_text,
         'comments': comment_texts,
         'book_url': urljoin(book_properties_url, book_properties[-3]['href']),
-        'book_name': f'{book_id}.{sanitize_filename(title)}.txt'
+        'book_name': f'{book_id}.{sanitize_filename(title)}'
 
     }
 

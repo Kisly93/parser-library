@@ -2,12 +2,17 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 import json
 from livereload import Server
 from more_itertools import chunked
+import os
 
 def render_website():
+    os.makedirs("pages", exist_ok=True)
+
     with open("downloads/all_books.json", "r") as all_books:
         books_json = all_books.read()
 
     books = json.loads(books_json)
+    books_per_page = 10
+    pages = list(chunked(books, books_per_page))
 
     env = Environment(
         loader=FileSystemLoader('.'),
@@ -15,10 +20,15 @@ def render_website():
     )
     env.filters['chunked'] = chunked
     template = env.get_template('template.html')
-    rendered_page = template.render(books=books)
 
-    with open('index.html', 'w', encoding="utf8") as file:
-        file.write(rendered_page)
+    for i, page in enumerate(pages, start=1):
+        rendered_page = template.render(books=page, current_page=i, total_pages=len(pages))
+
+        page_filename = f'pages/index{i}.html'
+        with open(page_filename, 'w', encoding="utf8") as file:
+            file.write(rendered_page)
+
+    print("Website rendered successfully!")
 
 if __name__ == "__main__":
     render_website()
