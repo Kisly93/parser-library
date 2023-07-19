@@ -13,6 +13,7 @@ def download_txt(book_url, filename, book_id, folder='books/'):
     response = requests.get(book_url, params=params)
     response.raise_for_status()
     sanitized_filename = sanitize_filename(filename, platform='auto')
+    print(sanitized_filename)
     filepath = os.path.join(folder, f'{sanitized_filename}.txt')
     os.makedirs(os.path.dirname(filepath), exist_ok=True)
     with open(filepath, 'wb') as file:
@@ -39,7 +40,7 @@ def check_for_redirect(response, book_properties_url):
         raise requests.exceptions.HTTPError("An HTTP error occurred")
 
 
-def parse_book_page(content, book_properties_url):
+def parse_book_page(content, book_properties_url, book_id):
     soup = BeautifulSoup(content, 'lxml')
     title_element = soup.select_one('h1')
     title_text = title_element.text.strip()
@@ -57,6 +58,7 @@ def parse_book_page(content, book_properties_url):
     comment_elements = soup.select('div.texts')
     comment_texts = [comment.span.text.strip() for comment in comment_elements]
 
+
     book = {
         'title': title,
         'author': author,
@@ -64,6 +66,8 @@ def parse_book_page(content, book_properties_url):
         'genres': genre_text,
         'comments': comment_texts,
         'book_url': urljoin(book_properties_url, book_properties[-3]['href']),
+        'book_name': f'{book_id}.{sanitize_filename(title)}.txt'
+
     }
 
     return book
@@ -83,7 +87,7 @@ def main():
             response.raise_for_status()
             check_for_redirect(response, book_properties_url)
 
-            book = parse_book_page(response.content, book_properties_url)
+            book = parse_book_page(response.content, book_properties_url, book_id)
             book_title = book['title']
             book_img = book['img_url']
             book_url = book['book_url']
