@@ -1,6 +1,7 @@
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 import json
 from livereload import Server
+from more_itertools import chunked
 
 def render_website():
     with open("downloads/all_books.json", "r") as all_books:
@@ -12,7 +13,7 @@ def render_website():
         loader=FileSystemLoader('.'),
         autoescape=select_autoescape(['html'])
     )
-
+    env.filters['chunked'] = chunked
     template = env.get_template('template.html')
     rendered_page = template.render(books=books)
 
