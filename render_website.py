@@ -7,7 +7,7 @@ import os
 def render_website():
     os.makedirs("pages", exist_ok=True)
 
-    with open("downloads/all_books.json", "r") as all_books:
+    with open("media/all_books.json", "r") as all_books:
         books_json = all_books.read()
 
     books = json.loads(books_json)
@@ -21,10 +21,10 @@ def render_website():
     env.filters['chunked'] = chunked
     template = env.get_template('template.html')
 
-    for i, page in enumerate(pages, start=1):
-        rendered_page = template.render(books=page, current_page=i, total_pages=len(pages))
+    for _, page in enumerate(pages, start=1):
+        rendered_page = template.render(books=page, current_page=_, total_pages=len(pages))
 
-        page_filename = f'pages/index{i}.html'
+        page_filename = f'pages/index{_}.html'
         with open(page_filename, 'w', encoding="utf8") as file:
             file.write(rendered_page)
 

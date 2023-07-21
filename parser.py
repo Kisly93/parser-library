@@ -8,12 +8,11 @@ import time
 import json
 
 
-def download_txt(book_url, filename, book_id, folder='books/'):
+def download_txt(book_url, filename, book_id, folder='media/books/'):
     params = {'id': book_id}
     response = requests.get(book_url, params=params)
     response.raise_for_status()
     sanitized_filename = sanitize_filename(filename, platform='auto')
-    print(sanitized_filename)
     filepath = os.path.join(folder, f'{sanitized_filename}.txt')
     os.makedirs(os.path.dirname(filepath), exist_ok=True)
     with open(filepath, 'wb') as file:
@@ -21,11 +20,12 @@ def download_txt(book_url, filename, book_id, folder='books/'):
     return filepath
 
 
-def download_image(book_img, folder='images/'):
+def download_image(book_img, folder='media/images/'):
     response = requests.get(book_img)
     response.raise_for_status()
     parsed_url = urlsplit(book_img)
     unquoted_filename = unquote(parsed_url.path.split('/')[-1])
+
     sanitized_filename = sanitize_filename(unquoted_filename, platform='auto')
     filepath = os.path.join(folder, sanitized_filename)
     os.makedirs(os.path.dirname(filepath), exist_ok=True)
@@ -51,6 +51,13 @@ def parse_book_page(content, book_properties_url, book_id):
     book_properties = soup.select('table.d_book a')
 
     img = soup.select_one('table.d_book img')['src']
+    img_extension = os.path.splitext(img)[1]
+
+    if img.endswith('/nopic.gif'):
+        img_name = 'nopic.gif'
+    else:
+        img_name = f'{book_id}{img_extension}'
+
 
     genre_elements = soup.select('span.d_book a')
     genre_text = [genre.text.strip() for genre in genre_elements]
@@ -66,7 +73,8 @@ def parse_book_page(content, book_properties_url, book_id):
         'genres': genre_text,
         'comments': comment_texts,
         'book_url': urljoin(book_properties_url, book_properties[-3]['href']),
-        'book_name': f'{book_id}.{sanitize_filename(title)}'
+        'book_name': f'{book_id}.{sanitize_filename(title)}',
+        'img_name': img_name,
 
     }
 

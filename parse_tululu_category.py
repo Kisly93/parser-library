@@ -23,7 +23,7 @@ def main():
     parser = argparse.ArgumentParser(description='Скачать книги с сайта Tululu.org')
     parser.add_argument('--start_page', type=int, nargs='?', default=1, help='Начальная страница (по умолчанию: 1)')
     parser.add_argument('--end_page', type=int, nargs='?', default=2, help='Конечная страница')
-    parser.add_argument('--dest_folder', type=str, default='downloads', help='Путь к каталогу с результатами парсинга')
+    parser.add_argument('--dest_folder', type=str, default='media', help='Путь к каталогу с результатами парсинга')
     parser.add_argument('--skip_imgs', action='store_true', help='Не скачивать картинки')
     parser.add_argument('--skip_txt', action='store_true', help='Не скачивать книги')
     args = parser.parse_args()
