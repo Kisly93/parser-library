@@ -21,14 +21,14 @@ def render_website():
     env.filters['chunked'] = chunked
     template = env.get_template('template.html')
 
-    for _, page in enumerate(pages, start=1):
-        rendered_page = template.render(books=page, current_page=_, total_pages=len(pages))
+    for page_num, page in enumerate(pages, start=1):
+        rendered_page = template.render(books=page, current_page=page_num, total_pages=len(pages))
 
-        page_filename = f'pages/index{_}.html'
+        page_filename = f'pages/index{page_num}.html'
         with open(page_filename, 'w', encoding="utf8") as file:
             file.write(rendered_page)
 
-    print("Website rendered successfully!")
+
 
 if __name__ == "__main__":
     render_website()
